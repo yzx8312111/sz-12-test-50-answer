@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二技116年班「孫子兵法」期末考（正式版）</title>
+    <style>
+        body { background-color: #FFEB3B; font-family: sans-serif; padding: 20px; margin: 0; box-sizing: border-box; }
+        .page { display: none; max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .active { display: block; }
+        h1 { text-align: center; color: #d32f2f; }
+        h2 { color: #333; }
+        .warning { color: #d32f2f; font-weight: bold; margin-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, button { width: 100%; padding: 15px; margin: 5px 0 15px 0; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { opacity: 0.9; }
+        .option { display: block; padding: 10px; margin: 5px 0; border: 1px solid #aaa; border-radius: 5px; cursor: pointer; }
+        .option.selected { background-color: #fff176; border-color: #fbc02d; }
+        
+        /* 結果頁樣式 */
+        .result-detail { background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .result-detail p { margin: 8px 0; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .result-detail strong { color: #2c3e50; }
+        
+        .review-item { border-bottom: 2px solid #eee; padding: 15px 0; }
+        .review-q { font-weight: bold; margin-bottom: 8px; }
+        .review-ans { color: #d32f2f; margin-bottom: 5px; }
+        .review-feedback { background: #f9f9f9; padding: 10px; border-left: 4px solid #4CAF50; font-size: 14px; color: #555; }
+        #statusMsg { font-weight: bold; text-align: center; margin: 10px 0; color: #666; }
+    </style>
+</head>
+<body>
+
+<!-- 第一頁：測驗說明 -->
+<div id="page1" class="page active">
+    <h1>二技116年班「孫子兵法」期末考</h1>
+    <div class="warning">
+        <p>１. 不得查閱任何形式之資料，不得交談或有任何違規、舞弊情事。</p>
+        <p>２. 作答中偵測到離開答題頁面，立即結束測驗並給定成績。</p>
+        <p>３. 只有一次答卷機會，成績將直接同步至雲端試算表。</p>
+    </div>
+    <button type="button" onclick="nextPage('page2')">確認後，繼續下一步</button>
+</div>
+
+<!-- 第二頁：個人資料 -->
+<div id="page2" class="page">
+    <h2>考生資料填寫</h2>
+    <div class="input-group">
+        <label for="class">班級：</label>
+        <input type="text" id="class">
+    </div>
+    <div class="input-group">
+        <label for="id">學號：</label>
+        <!-- 僅在此處加入提示詞 -->
+        <input type="text" id="id" placeholder="輸入學號末３碼">
+    </div>
+    <div class="input-group">
+        <label for="name">姓名：</label>
+        <input type="text" id="name">
+    </div>
+    <button type="button" onclick="startQuiz()">開始測驗</button>
+</div>
+
+<!-- 第三頁：測驗中 -->
+<div id="page3" class="page">
+    <div id="questionContainer"></div>
+    <div style="display:flex; gap:10px;">
+        <button id="prevBtn" onclick="prevQuestion()" style="background-color: #757575;">上一題</button>
+        <button id="nextBtn" onclick="nextQuestion()">下一題</button>
+    </div>
+    <button id="submitBtn" style="background-color: #d32f2f; display:none;" onclick="finishQuiz()">確認交卷</button>
+</div>
+
+<!-- 第四頁：成績結果與解析 -->
+<div id="page4" class="page">
+    <h1>測驗結果</h1>
+    <div id="resultInfo" class="result-detail"></div>
+    <div id="statusMsg">成績處理中...</div>
+    <hr>
+    <h3>【錯題檢討與解析】</h3>
+    <div id="reviewContainer"></div>
+    <button onclick="location.reload()" style="background-color: #757575; margin-top: 20px;">回首頁</button>
+</div>
+
+<script>
+    // 題庫與解析
+    const rawQuestions = [
+        { q: "根據《始計篇》，孫子認為「兵」是國家的什麼大事？", options: ["財政之源，經濟之本", "死生之地，存亡之道", "防護之盾，仁義之師", "對抗敵人，殺人藝術"], ans: 1, feedback: "原文：『兵者，國之大事，死生之地，存亡之道，不可不察也。』強調戰爭關乎國家生死存亡。" },
+        { q: "孫子提出的「五事」評估架構，排序第一的是什麼？", options: ["天", "地", "將", "道"], ans: 3, feedback: "五事順序為：道、天、地、將、法。『道』為首位，指民心向背與政治認同。" },
+        { q: "下列哪一項屬於「天」的範疇？", options: ["遠近、險易", "智、信、仁、勇、嚴", "陰陽、寒暑、時制", "曲制、官道、主用"], ans: 2, feedback: "原文：『天者，陰陽、寒暑、時制也。』指氣候、季節與自然規律。" },
+        { q: "「道者，令民與上同意」的現代管理學解釋最接近：", options: ["員工對願景與目標的認同", "嚴格執行法律", "增加加班薪資", "提高硬體設備規格"], ans: 0, feedback: "『道』強調上下同欲，在管理學中即為團隊對組織願景與目標的高度共識。" },
+        { q: "孫子認為將帥必須具備五種武德，以下何者不在其中？", options: ["智", "仁", "嚴", "禮"], ans: 3, feedback: "將領五德為：智、信、仁、勇、嚴。不包含『禮』。" },
+        { q: "在「法」的內容中，「主用」具體指稱的是：", options: ["組織編制", "職責劃分", "指揮鏈", "後勤財管"], ans: 3, feedback: "『主用』指軍費的開支與管理，屬於後勤財務範疇。" },
+        { q: "「兵者，詭道也」的核心含義是：", options: ["戰爭是一種欺詐的行為藝術", "戰爭不需要道德", "必須無止盡地殺人", "隨機應變，不需計畫"], ans: 0, feedback: "孫子強調用兵必須虛虛實實，透過欺敵手段取得戰略優勢。" },
+        { q: "古代進行「廟算」時使用的計算工具稱為：", options: ["算盤", "羅盤", "秤錘", "算籌"], ans: 3, feedback: "古代以竹製『算籌』進行籌算，『多算勝』指的就是籌碼評估後勝算較大。" },
+        { q: "「廟算」的地點「廟」在古代指：", options: ["宗廟祖廟", "宗教寺廟", "市集中心", "軍營帳篷"], ans: 0, feedback: "廟指宗廟。古人在決定國家大事（如戰爭）時，必在宗廟進行商議評估。" },
+        { q: "理工科常強調系統參數。若將「道、天、地、將、法」視為系統參數，哪一項最屬於「外部不可控環境因素」？", options: ["天", "道", "將", "法"], ans: 0, feedback: "『天』（氣候）與『地』（地形）屬於大自然的外部環境，人力較難直接改變。" },
+        { q: "關於「法」中「曲制」的現代企業對應，下列何者正確？", options: ["權責體系", "資源管理", "組織架構", "預算控管"], ans: 2, feedback: "『曲制』指軍隊的組織編制與層級架構。" },
+        { q: "孫子說「知之者勝，不知者不勝」，這裡的「知」是指掌握了什麼？", options: ["敵方重要人員的名字", "國君個人的喜好", "先進的武器技術", "五事七計的評估"], ans: 3, feedback: "『知之』是指透徹了解五事（基本面）與七計（比較評估）的人才能獲勝。" },
+        { q: "在「七計」比較中，「主孰有道」主要是比較雙方領導者的：", options: ["武力", "民心", "財富", "學位"], ans: 1, feedback: "『主孰有道』比較的是哪一方的君主更能獲得人民的擁護。" },
+        { q: "「詭道十二法」中，「能而示之不能，用而示之不用」旨在製造什麼效果？", options: ["資訊對稱", "雙贏局面", "資訊不對稱", "增加生產力"], ans: 2, feedback: "透過偽裝實力，使敵方對我方真實情況產生錯誤判斷（資訊不對稱）。" },
+        { q: "若敵人處於「混亂狀態」，我方應採取何種策略？", options: ["誘之", "取之", "備之", "避之"], ans: 1, feedback: "原文：『亂而取之』。趁敵人內部混亂時發動進攻奪取勝利。" },
+        { q: "「實而備之，強而避之」體現了孫子哪一種戰略思想？", options: ["孤注一擲", "窮兵鷷武", "破斧沉舟", "避實擊虛"], ans: 3, feedback: "面對實力雄厚、準備充分的敵人應先行迴避，尋找薄弱點攻擊。" },
+        { q: "「卑而驕之」的具體策略是：", options: ["示弱使敵人產生驕氣", "送財貨以賄賂敵人", "直接攻擊敵人本部", "用計離間敵人內部"], ans: 0, feedback: "故意示弱使敵人產生驕傲自大之心，進而鬆懈防備。" },
+        { q: "孫子提到「佚而勞之」，這屬於哪一類策略？", options: ["隱匿欺敵類", "利用弱點類", "避實擊虛類", "主動疲敵類"], ans: 3, feedback: "當敵人休整良好（佚）時，設法使他們疲於奔命。" },
+        { q: "「親而離之」的目標是針對敵方的：", options: ["後勤補給", "氣候掌握", "武器裝備", "內部團結關係"], ans: 3, feedback: "針對敵人內部親近的關係進行挑撥離間。" },
+        { q: "關於「廟算」，孫子總結「多算勝，少算不勝」，這說明了：", options: ["數學好的人一定會打仗", "戰前周密計畫與評估的重要性", "計算次數越多越好", "戰爭全靠運氣"], ans: 1, feedback: "強調開戰前的周密計畫、資源評估與勝算分析是獲勝的前提。" },
+        { q: "「勢者，因利而制權也」，這裡的「權」字引申意為：", options: ["機變", "權力", "權限", "霸權"], ans: 0, feedback: "『權』指權變、靈活應變。根據有利情況採取機動的行動。" },
+        { q: "孫子認為「法」包含「官道」，這在理工專案管理中相當於：", options: ["程式碼規範", "權責劃分與指揮鏈", "硬體採購清單", "實驗室溫度控制"], ans: 1, feedback: "『官道』指各級官員的管理與職責權限劃分。" },
+        { q: "資料中提到「計利以聽，乃為之勢」，其邏輯順序為何？", options: ["先有勢，再有計，最後聽", "隨機應變後再回報", "聽命行事後再計算", "先計算優勢，被決策者採納後，才製造外部的「勢」"], ans: 3, feedback: "先在內部完成戰略計算（計），獲得採納後（聽），再到外部戰場造勢（勢）。" },
+        { q: "孫子在《始計篇》先講「五事」再談「十二詭道」，其戰略邏輯是：", options: ["詭道比五事重要，五事只是紙上談兵", "以實力為基石，以詭計為輔助手段", "兩者互不相關", "詭道是為了掩蓋實力的不足"], ans: 1, feedback: "五事是實力對比，詭道是戰術運用。實力是基礎，戰術是加成。" },
+        { q: "希臘薩拉米斯海峽之戰，希臘以少勝多，主要是利用了「五事中的哪一項？", options: ["道", "將", "地", "法"], ans: 2, feedback: "希臘軍隊利用狹窄的海峽地形（地）優勢，使波斯大軍無法發揮數量優勢。" },
+        { q: "根據《始計篇》全文邏輯，戰爭的勝負在何時已經可以預見？", options: ["雙方白刃戰時", "撤退時", "簽署和平協議時", "開戰前的「廟算」階段"], ans: 3, feedback: "孫子認為透過『廟算』的數據對比，在未開戰前就能預知勝負。" },
+        { q: "《孫子兵法‧作戰篇》的核心主旨為何？", options: ["論述戰爭後勤與經濟", "論述如何排兵布陣", "論述外交攻勢", "論述將領的個人勇武"], ans: 0, feedback: "《作戰篇》重點在於戰爭的經濟成本、物資消耗與後勤補給。" },
+        { q: "文中所提到的「馳車千駟」中，「駟」是指幾匹馬拉的車？", options: ["二匹", "三匹", "四匹", "八匹"], ans: 2, feedback: "『駟』即指由四匹馬拉動的戰車。" },
+        { q: "孫子提出「兵聞拙速，未睹巧之久也」，其中「拙速」主要針對哪方面的考量？", options: ["藝術美感", "士兵服裝", "戰場儀式", "財政軍費"], ans: 3, feedback: "『拙速』指寧可指揮稍嫌粗糙但要快速結束，避免長期戰爭耗盡國家財力。" },
+        { q: "「因糧於敵」的主要目的是什麼？", options: ["減輕己方後勤運輸負擔", "炫耀我軍實力", "浪費敵軍糧草", "改善士兵口味"], ans: 0, feedback: "在敵國境內解決補給問題，可以極大減輕從本國長途運輸物資的壓力。" },
+        { q: "春秋時期的基本作戰型態以何者為主？", options: ["騎兵戰", "坦克戰", "車戰", "陣地戰"], ans: 2, feedback: "孫子時代（春秋時期）的主力兵種與作戰方式為戰車（車戰）。" },
+        { q: "「取用於國，因糧於敵」的「因」字意指為何？", options: ["因為", "依靠", "因素", "傳遞"], ans: 1, feedback: "『因』有『依託』、『就地利用』之意。" },
+        { q: "「役不再籍」的意思是？", options: ["不必登記戶口", "戰役不留下紀錄", "士兵不需攜帶證件", "不再重複徵調兵員"], ans: 3, feedback: "指兵源徵集一次完成，不再重複徵召，以減輕對民間生產力的破壞。" },
+        { q: "「公家之費」中提到的「破車罷馬」，其中「罷」字音為何？", options: ["ㄅㄚˋ，停止", "ㄅㄧˋ，疲勞", "ㄆㄧˊ，疲憊", "ㄅㄚ，老弱"], ans: 2, feedback: "通『疲』，讀音為『ㄆㄧˊ』，形容戰馬疲憊勞累。" },
+        { q: "關於「因糧於敵」的比例，孫子認為食敵一「鍾」相當於從本國運輸幾「鍾」？", options: ["十鍾", "二十鍾", "三十鍾", "五十鍾"], ans: 1, feedback: "原文：『食敵一鍾，當吾二十鍾。』強調長途運輸的高額損耗成本。" },
+        { q: "在系統優化觀點下，為什麼「遠輸則百姓貧」？", options: ["運輸過程損耗大且人力脫離生產", "軍隊沒有紀律，士兵會沿路搶劫", "賦役煩重，並且百姓不願繳稅", "國家會提高貨幣匯率"], ans: 0, feedback: "長途運輸物資會導致大量物資在途中消耗，且徵調大量勞動力影響正常生產。" },
+        { q: "「堅壁清野」是針對孫子哪項策略的反制？", options: ["攻城戰", "兵者詭道", "拙速戰術", "因糧於敵"], ans: 3, feedback: "堅壁清野是將物資移走或毀掉，讓敵人無法『因糧於敵』。" },
+        { q: "拿破崙兵敗俄國的主要原因，可以從《作戰篇》中哪一點得到解釋？", options: ["將領不夠勇敢，智力不足", "武器不夠先進，且士氣低落", "補給線過長且無法因糧於敵", "俄國事先運作，孤立法國"], ans: 2, feedback: "拿破崙大軍因俄國的焦土政策無法就地補給，且補給線過長，最終潰敗。" },
+        { q: "孫子認為「久暴師則國用不足」，此處「暴師」是指？", options: ["無紀律、殘忍暴虐的士兵", "暴露於戰場上的軍隊", "長期在野外作戰的部隊", "長期訓練不足的軍隊"], ans: 2, feedback: "『暴』通『曝』，指軍隊長期暴露在外作戰，耗費巨大資源。" },
+        { q: "「近師者貴賣，貴賣則百姓財竭」，從經濟學角度看，這是因為？", options: ["需求激增導致物價飛漲", "政府立法強制徵收", "商人傾銷囤積，供需失衡", "政治黑暗，貨幣貶值"], ans: 0, feedback: "大軍駐紮處，因龐大的消費需求導致當地物價暴漲，進而搜刮民財。" },
+        { q: "孫子主張「勝敵而益強」，其具體做法不包括下列何者？", options: ["獎賞先奪取敵車者", "更換敵方旗幟混用", "屠殺所有戰俘", "善待並養用戰俘"], ans: 2, feedback: "孫子主張『卒善而養之』，反對屠殺戰俘，應將敵方力量轉化為己用。" },
+        { q: "「食敵一鍾，當吾二十鍾」，這二十倍的差距主要源於？", options: ["敵軍食物熱量較高、糧草品質較佳", "運輸人馬的消耗、意外與敵方掠奪", "匯率轉換損失", "敵方糧食充足，供應無虞"], ans: 1, feedback: "運送過程中，運輸人員與牲口本身也要吃飯，路程越長消耗越多。" },
+        { q: "孫子認為「殺敵者，怒也」，這是在強調作戰中的哪種激發機制？", options: ["金錢與物質獎賞", "情緒與心理動員", "法律規範", "體能訓練"], ans: 1, feedback: "透過激發士兵對敵人的憤慨心理，來提高戰鬥積極性。" },
+        { q: "孫子對「智將」的定義，重點在於其是否能？", options: ["務食於敵", "親自上陣殺敵", "熟讀兵書", "獲得百姓喜愛"], ans: 0, feedback: "原文：『故智將務食於敵。』稱職的將領會優先考慮如何在敵國解決糧草問題。" },
+        { q: "孫子認為將領是「民之司命，國家安危之主也」，這是因為將領掌握了？", options: ["所有的糧食和先進的科技武器", "人民參戰子弟的管制與生命", "皇帝的信任與任命書", "國家的資源保障與戰略決策"], ans: 3, feedback: "將領的決策直接關係到戰爭的勝負，進而影響國家主權與百姓性命。" },
+        { q: "從供應鏈管理 (SCM) 角度分析，孫子主張「因糧於敵」是為了解決什麼問題？", options: ["提高源料的品質", "進行市場區隔", "增加產品多樣性", "降低運輸損耗"], ans: 3, feedback: "因糧於敵能直接消除跨國運輸的龐大損耗，是物流供應鏈的極致優化。" },
+        { q: "孫子分析戰爭導致「中原內虛於家，百姓之費，十去其七」。這種經濟負載分析顯示了？", options: ["戰爭對民生系統的破壞與資源榨取", "戰爭具有高投資報酬率", "政府行政效率高，徵收速度快", "百姓生活富裕，可以支持戰爭耗損"], ans: 0, feedback: "戰爭會造成嚴重的資源轉移，導致民間財富枯竭、農業生產停滯。" },
+        { q: "「諸侯乘其弊而起」中的「弊」，在風險管理 (Risk Management) 中屬於哪種因素？", options: ["外部威脅隨內部脆弱性增加而誘發", "市場機會因判斷錯誤所喪失", "財務溢價隨企業形象而擴增", "技術優勢因研發投資而穩固"], ans: 0, feedback: "當國家因長期戰爭出現疲態（內部脆弱性）時，周邊國家（外部威脅）就會趁虛而入。" },
+        { q: "「911恐攻，以美國飛機攻美國」是「因糧於敵」的活用。這在資訊安全領域類似於哪種攻擊？", options: ["暴力破解", "利用系統既有資源進行破壞", "防火牆更新", "數據備份"], ans: 1, feedback: "利用敵人現有的資源（飛機/系統權限）攻擊敵人，不需自備大量重型武裝。" },
+        { q: "孫子提到「不盡知用兵之害者，則不能盡知用兵之利也」。這最符合哪項原則？", options: ["能量守恆與物質不滅定律", "線性疊加", "權衡取捨與利弊分析", "管理紀律與零誤差"], ans: 2, feedback: "決策者必須同時透徹理解獲利的代價與風險，進行全面的利弊權衡。" }
+    ];
+
+    let questions = [];
+    let userAnswers = {};
+    let currentIndex = 0;
+    let startTime, endTime;
+    let isSubmitted = false;
+
+    function nextPage(targetId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(targetId).classList.add('active');
+    }
+
+    function startQuiz() {
+        const cls = document.getElementById('class').value.trim();
+        const id = document.getElementById('id').value.trim();
+        const name = document.getElementById('name').value.trim();
+        if(!cls || !id || !name) { alert('班級、學號、姓名皆為必填'); return; }
+        
+        startTime = new Date();
+        questions = [...rawQuestions].sort(() => Math.random() - 0.5);
+        nextPage('page3');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = questions[currentIndex];
+        const container = document.getElementById('questionContainer');
+        container.innerHTML = `<div style="font-size:18px; margin-bottom:15px; font-weight:bold;">第 ${currentIndex + 1}/${questions.length} 題：${q.q}</div>`;
+        
+        q.options.forEach((opt, idx) => {
+            const div = document.createElement('div');
+            div.className = 'option ' + (userAnswers[currentIndex] === idx ? 'selected' : '');
+            div.textContent = opt;
+            div.onclick = () => { userAnswers[currentIndex] = idx; renderQuestion(); };
+            container.appendChild(div);
+        });
+
+        document.getElementById('prevBtn').disabled = (currentIndex === 0);
+        document.getElementById('nextBtn').style.display = (currentIndex === questions.length - 1) ? 'none' : 'block';
+        document.getElementById('submitBtn').style.display = (currentIndex === questions.length - 1) ? 'block' : 'none';
+    }
+
+    function nextQuestion() { if(currentIndex < questions.length - 1) { currentIndex++; renderQuestion(); } }
+    function prevQuestion() { if(currentIndex > 0) { currentIndex--; renderQuestion(); } }
+
+    function finishQuiz() {
+        if(endTime) return;
+        endTime = new Date();
+        let correctCount = 0;
+        
+        const reviewContainer = document.getElementById('reviewContainer');
+        reviewContainer.innerHTML = '';
+
+        questions.forEach((q, i) => {
+            if(userAnswers[i] === q.ans) {
+                correctCount++;
+            } else {
+                const div = document.createElement('div');
+                div.className = 'review-item';
+                div.innerHTML = `
+                    <div class="review-q">題目：${q.q}</div>
+                    <div class="review-ans">您的答案：${userAnswers[i] !== undefined ? q.options[userAnswers[i]] : '未作答'} (❌)</div>
+                    <div class="review-ans" style="color:green">正確答案：${q.options[q.ans]} (✅)</div>
+                    <div class="review-feedback"><strong>解析：</strong>${q.feedback}</div>
+                `;
+                reviewContainer.appendChild(div);
+            }
+        });
+
+        if(reviewContainer.innerHTML === '') reviewContainer.innerHTML = '<p style="color:green; text-align:center;">太棒了！全對！</p>';
+
+        nextPage('page4');
+        
+        const formatTime = (date) => date.toLocaleString('zh-TW', { hour12: false });
+
+        document.getElementById('resultInfo').innerHTML = `
+            <p><strong>班級：</strong>${document.getElementById('class').value}</p>
+            <p><strong>學號：</strong>${document.getElementById('id').value}</p>
+            <p><strong>姓名：</strong>${document.getElementById('name').value}</p>
+            <p><strong>答對題數：</strong><span style="color:red; font-weight:bold;">${correctCount} / ${questions.length}</span></p>
+            <p><strong>開始時間：</strong>${formatTime(startTime)}</p>
+            <p><strong>結束時間：</strong>${formatTime(endTime)}</p>
+        `;
+
+        if(!isSubmitted) {
+            const timeOnly = (date) => date.toTimeString().split(' ')[0];
+            uploadToGoogleForm(correctCount, timeOnly(startTime), timeOnly(endTime));
+        }
+    }
+
+    function uploadToGoogleForm(score, sTime, eTime) {
+        const formActionURL = "https://docs.google.com/forms/d/e/1FAIpQLScbE7uQ6GOZ2A0n-PGKg4DqtfihW_MNzaI7L3Qokd-HzZ_H_A/formResponse";
+        const formData = new FormData();
+        formData.append("entry.318118139", document.getElementById('class').value);
+        formData.append("entry.1838303013", document.getElementById('id').value);
+        formData.append("entry.1807549285", document.getElementById('name').value);
+        formData.append("entry.678193114", score);
+        formData.append("entry.559437203", sTime);
+        formData.append("entry.859498857", eTime);
+
+        fetch(formActionURL, { method: "POST", mode: "no-cors", body: formData })
+        .then(() => {
+            isSubmitted = true;
+            document.getElementById('statusMsg').innerText = "✅ 成績上傳成功！請查看錯題解析進行複習。";
+            document.getElementById('statusMsg').style.color = "green";
+        }).catch(() => {
+            document.getElementById('statusMsg').innerText = "❌ 上傳失敗，請聯絡監考教師。";
+            document.getElementById('statusMsg').style.color = "red";
+        });
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'hidden' && startTime && !endTime) {
+            alert('偵測到您離開頁面，測驗將強制結束！');
+            finishQuiz();
+        }
+    });
+</script>
+</body>
+</html>
