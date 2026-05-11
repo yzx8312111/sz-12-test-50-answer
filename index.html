@@ -11,6 +11,7 @@
         h1 { text-align: center; color: #d32f2f; }
         h2 { color: #333; }
         .warning { color: #d32f2f; font-weight: bold; margin-bottom: 10px; }
+        .instruction-red { color: #d32f2f; font-weight: bold; text-align: center; margin: 20px 0 10px 0; font-size: 18px; }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         input, button { width: 100%; padding: 15px; margin: 5px 0 15px 0; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
@@ -53,13 +54,16 @@
     </div>
     <div class="input-group">
         <label for="id">學號：</label>
-        <!-- 僅在此處加入提示詞 -->
         <input type="text" id="id" placeholder="輸入學號末３碼">
     </div>
     <div class="input-group">
         <label for="name">姓名：</label>
         <input type="text" id="name">
     </div>
+    
+    <!-- 新增的紅字提醒詞 -->
+    <div class="instruction-red">【統一聽監考人員下令後開始測驗】</div>
+    
     <button type="button" onclick="startQuiz()">開始測驗</button>
 </div>
 
@@ -85,7 +89,7 @@
 </div>
 
 <script>
-    // 題庫與解析
+    // 題庫與解析 (保持不變)
     const rawQuestions = [
         { q: "根據《始計篇》，孫子認為「兵」是國家的什麼大事？", options: ["財政之源，經濟之本", "死生之地，存亡之道", "防護之盾，仁義之師", "對抗敵人，殺人藝術"], ans: 1, feedback: "原文：『兵者，國之大事，死生之地，存亡之道，不可不察也。』強調戰爭關乎國家生死存亡。" },
         { q: "孫子提出的「五事」評估架構，排序第一的是什麼？", options: ["天", "地", "將", "道"], ans: 3, feedback: "五事順序為：道、天、地、將、法。『道』為首位，指民心向背與政治認同。" },
